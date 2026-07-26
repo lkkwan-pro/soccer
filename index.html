@@ -77,42 +77,40 @@
             z-index: 15; 
         }
 
-        /* Full Size Moving Goalkeeper */
+        /* Stationary Goalkeeper */
         .goalie {
             font-size: 4.5rem;
             position: absolute;
             bottom: -15px; 
             left: 50%;
             margin-left: -2.25rem; 
-            animation: patrol 1.5s infinite alternate ease-in-out;
             z-index: 12; 
             filter: drop-shadow(0 4px 4px rgba(0,0,0,0.5));
-        }
-        @keyframes patrol {
-            0% { transform: translateX(-100px); }
-            100% { transform: translateX(100px); }
         }
 
         /* The MASSIVE Ball */
         .ball {
-            font-size: 9rem; /* Tripled in size */
+            font-size: 9rem; 
             position: absolute;
-            bottom: 25%; /* Lowered to fit the giant ball */
+            top: 55%; 
             left: 50%;
-            transform: translateX(-50%) scale(1);
+            margin-top: -4.5rem;
+            margin-left: -4.5rem;
+            transform: scale(1);
             transition: all 0.5s cubic-bezier(0.25, 1, 0.5, 1);
             filter: drop-shadow(0 8px 8px rgba(0,0,0,0.6));
             z-index: 10; 
+            line-height: 1;
         }
         
-        /* Dynamic Ball Animations (adjusted for massive size) */
+        /* Ball Animations */
         .ball.shoot { 
-            bottom: calc(100% - 100px); 
-            transform: translateX(-50%) scale(0.2); /* Shrinks massively as it flies into the distance */
+            top: 60px; 
+            transform: scale(0.25); 
             opacity: 0.9;
         }
         .ball.miss { 
-            bottom: calc(100% - 50px);
+            top: 60px;
             transform: translateX(140px) scale(0.3) rotate(180deg); 
             opacity: 0; 
         }
@@ -120,27 +118,59 @@
         /* The Timer Display */
         .timer-badge {
             position: absolute;
-            top: 15px;
-            left: 15px;
+            top: 20px;
+            left: 20px;
             background: rgba(0, 0, 0, 0.7);
             color: white;
-            padding: 8px 15px;
+            padding: 10px 20px;
             border-radius: 20px;
-            font-size: 1.5rem;
+            font-size: 2.8rem; 
             font-weight: bold;
             z-index: 20;
-            border: 2px solid white;
+            border: 3px solid white;
             transition: color 0.3s;
         }
 
-        /* Math Problem Area */
+        /* The New History Tracker */
+        .history-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 1.6rem; /* Large enough for iPad readability */
+            z-index: 20;
+            border: 3px solid white;
+            min-width: 140px;
+        }
+        .history-title {
+            font-size: 1.2rem;
+            color: var(--gold);
+            text-align: center;
+            border-bottom: 2px solid #555;
+            padding-bottom: 5px;
+            margin-bottom: 8px;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-family: monospace;
+            font-weight: bold;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* MASSIVE Math Problem Area */
         .problem-area {
             position: absolute;
             bottom: 3%;
             background: rgba(255, 255, 255, 0.95);
             padding: 10px 25px;
             border-radius: 20px;
-            font-size: 4.5rem;
+            font-size: 4.5rem; 
             font-weight: bold;
             color: #333;
             border: 4px solid var(--hk-red);
@@ -148,12 +178,12 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            z-index: 20; /* Sits completely in front of the ball */
+            z-index: 20; 
             white-space: nowrap;
         }
         .input-display {
             color: var(--hk-red); 
-            min-width: 90px;
+            min-width: 90px; 
             text-align: center;
             border-bottom: 5px dashed var(--hk-red); 
             height: 80px; 
@@ -162,7 +192,7 @@
 
         /* Message Overlay */
         #message {
-            position: absolute; top: 40%; font-size: 3rem; font-weight: bold;
+            position: absolute; top: 40%; font-size: 3.5rem; font-weight: bold;
             text-shadow: 2px 2px 0 #000; opacity: 0; transition: opacity 0.3s; z-index: 25;
             text-align: center; width: 100%;
         }
@@ -216,6 +246,15 @@
 
     <div class="pitch">
         <div class="timer-badge" id="timerDisplay">⏱️ 0.0s</div>
+        
+        <!-- NEW: History Tracker Panel -->
+        <div class="history-panel" id="historyPanel">
+            <div class="history-title">最新5球</div>
+            <div id="historyList">
+                <div style="font-size: 1rem; color: #ccc; text-align: center; margin-top: 10px;">尚未起腳...</div>
+            </div>
+        </div>
+
         <div class="goal-container">
             <div class="goal-net-back"></div>
             <div class="goalie">🤾‍♂️</div>
@@ -255,6 +294,9 @@
         
         let timerInterval;
         let timeElapsed = 0;
+        
+        // NEW: History Array
+        let shootHistory = [];
 
         function updateLevelVisuals() {
             let newLevel = 1;
@@ -278,6 +320,26 @@
             document.getElementById('levelBanner').innerText = bannerText;
         }
 
+        // NEW: Function to update and render history
+        function updateHistory(time, isGoal) {
+            shootHistory.unshift({ time: time, isGoal: isGoal }); // Add to beginning
+            if (shootHistory.length > 5) {
+                shootHistory.pop(); // Keep only the latest 5
+            }
+            
+            const listObj = document.getElementById('historyList');
+            listObj.innerHTML = "";
+            
+            shootHistory.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                const icon = item.isGoal ? "🟢" : "❌";
+                const color = item.isGoal ? "white" : "#FF3333";
+                div.innerHTML = `<span style="color: ${color};">${item.time.toFixed(1)}s</span><span>${icon}</span>`;
+                listObj.appendChild(div);
+            });
+        }
+
         function startTimer() {
             clearInterval(timerInterval);
             timeElapsed = 0;
@@ -288,7 +350,6 @@
             timerInterval = setInterval(() => {
                 timeElapsed += 0.1;
                 timerObj.innerText = `⏱️ ${timeElapsed.toFixed(1)}s`;
-                // Hint constraint visually: Turn red after 5 seconds
                 if (timeElapsed > 5.0) {
                     timerObj.style.color = "#FF3333";
                 }
@@ -303,14 +364,11 @@
                 let fw = document.createElement('div');
                 fw.innerText = emojis[Math.floor(Math.random() * emojis.length)];
                 fw.className = 'firework';
-                // Random positioning across the pitch
                 fw.style.left = (10 + Math.random() * 80) + '%';
                 fw.style.top = (20 + Math.random() * 50) + '%';
                 fw.style.fontSize = (2 + Math.random() * 3) + 'rem';
                 
                 pitch.appendChild(fw);
-                
-                // Cleanup DOM
                 setTimeout(() => fw.remove(), 1000);
             }
         }
@@ -361,7 +419,7 @@
         function shoot() {
             if (isAnimating || currentInput === "") return;
             isAnimating = true;
-            clearInterval(timerInterval); // Stop timer on shoot
+            clearInterval(timerInterval); 
             
             const ball = document.getElementById('soccerBall');
             const msg = document.getElementById('message');
@@ -369,6 +427,10 @@
             if (parseInt(currentInput) === correctAnswer) {
                 score += 10;
                 streak++;
+                
+                // Record success history
+                updateHistory(timeElapsed, true);
+                
                 ball.classList.add('shoot');
                 updateLevelVisuals();
                 
@@ -393,6 +455,10 @@
                 
             } else {
                 streak = 0;
+                
+                // Record fail history
+                updateHistory(timeElapsed, false);
+                
                 ball.classList.add('miss');
                 
                 setTimeout(() => {
@@ -408,7 +474,7 @@
                     ball.className = "ball";
                     msg.style.opacity = "0";
                     isAnimating = false;
-                    startTimer(); // Restart timer for retry
+                    startTimer(); 
                 }, 1500);
             }
         }
