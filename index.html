@@ -103,12 +103,21 @@
             line-height: 1;
         }
         
-        /* Ball Animations */
+        /* NEW: Randomized Ball Shooting Animations */
         .ball.shoot { 
             top: 60px; 
-            transform: scale(0.25); 
             opacity: 0.9;
         }
+        .ball.shoot-left {
+            transform: translateX(-90px) scale(0.25);
+        }
+        .ball.shoot-center {
+            transform: scale(0.25);
+        }
+        .ball.shoot-right {
+            transform: translateX(90px) scale(0.25);
+        }
+
         .ball.miss { 
             top: 60px;
             transform: translateX(140px) scale(0.3) rotate(180deg); 
@@ -131,7 +140,7 @@
             transition: color 0.3s;
         }
 
-        /* The New History Tracker */
+        /* The History Tracker */
         .history-panel {
             position: absolute;
             top: 20px;
@@ -140,7 +149,7 @@
             color: white;
             padding: 10px 15px;
             border-radius: 15px;
-            font-size: 1.6rem; /* Large enough for iPad readability */
+            font-size: 1.6rem; 
             z-index: 20;
             border: 3px solid white;
             min-width: 140px;
@@ -247,7 +256,6 @@
     <div class="pitch">
         <div class="timer-badge" id="timerDisplay">⏱️ 0.0s</div>
         
-        <!-- NEW: History Tracker Panel -->
         <div class="history-panel" id="historyPanel">
             <div class="history-title">最新5球</div>
             <div id="historyList">
@@ -294,8 +302,6 @@
         
         let timerInterval;
         let timeElapsed = 0;
-        
-        // NEW: History Array
         let shootHistory = [];
 
         function updateLevelVisuals() {
@@ -320,11 +326,10 @@
             document.getElementById('levelBanner').innerText = bannerText;
         }
 
-        // NEW: Function to update and render history
         function updateHistory(time, isGoal) {
-            shootHistory.unshift({ time: time, isGoal: isGoal }); // Add to beginning
+            shootHistory.unshift({ time: time, isGoal: isGoal }); 
             if (shootHistory.length > 5) {
-                shootHistory.pop(); // Keep only the latest 5
+                shootHistory.pop(); 
             }
             
             const listObj = document.getElementById('historyList');
@@ -385,7 +390,7 @@
             updateDisplay();
             
             const ball = document.getElementById('soccerBall');
-            ball.className = "ball";
+            ball.className = "ball"; // Clears all shooting direction classes
             document.getElementById('message').style.opacity = "0";
             isAnimating = false;
             
@@ -428,10 +433,15 @@
                 score += 10;
                 streak++;
                 
-                // Record success history
                 updateHistory(timeElapsed, true);
                 
+                // NEW: Randomize Shot Direction (Left, Center, or Right)
+                const directions = ['shoot-left', 'shoot-center', 'shoot-right'];
+                const randomDirection = directions[Math.floor(Math.random() * directions.length)];
+                
                 ball.classList.add('shoot');
+                ball.classList.add(randomDirection);
+                
                 updateLevelVisuals();
                 
                 if (timeElapsed <= 5.0) {
@@ -456,7 +466,6 @@
             } else {
                 streak = 0;
                 
-                // Record fail history
                 updateHistory(timeElapsed, false);
                 
                 ball.classList.add('miss');
@@ -471,7 +480,7 @@
                 }, 300);
                 
                 setTimeout(() => {
-                    ball.className = "ball";
+                    ball.className = "ball"; // This resets the ball to the center for the next shot
                     msg.style.opacity = "0";
                     isAnimating = false;
                     startTimer(); 
